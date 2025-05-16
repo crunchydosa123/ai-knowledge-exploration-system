@@ -1,12 +1,17 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 
 import authRoutes from './routes/authRoutes.js';
 import embeddingRoutes from './routes/embeddingRoutes.js'
 import pineconeRoutes from './routes/pineconeRoutes.js'
+import chatRoutes from './routes/chatRoutes.js'
 
-dotenv.config();
+// For debugging - remove in production
+console.log('Environment check on server start:');
+console.log('PINECONE_API_KEY:', process.env.PINECONE_API_KEY ? 'exists' : 'missing');
 
 const app = express();
 
@@ -18,6 +23,7 @@ app.use(cors());
 app.use('/auth', authRoutes);
 app.use('/embeddings', embeddingRoutes)
 app.use('/pinecone', pineconeRoutes)
+app.use('/chat', chatRoutes)
 //app.use('/embedding', embeddingRoutes);
 //app.use('/storage', storageRoutes);
 

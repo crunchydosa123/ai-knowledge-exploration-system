@@ -1,4 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { Pinecone } from '@pinecone-database/pinecone';
+
+// For debugging - remove in production
+console.log('PINECONE_API_KEY:', process.env.PINECONE_API_KEY);
 
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
