@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 👈 import
+import { useUser } from "../contexts/UserContext";
 
 const LoginPage = () => {
+  const { login } = useUser();
+  const navigate = useNavigate(); // 👈 initialize
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -18,28 +22,28 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
+      const res = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.message || 'Login failed');
+        throw new Error(errData.message || "Login failed");
       }
 
       const data = await res.json();
-      console.log('✅ Login successful:', data);
+      console.log("✅ Login successful:", data);
 
-      // Example: Save token and redirect
-      // localStorage.setItem('token', data.token);
-      // window.location.href = '/dashboard';
+      login(data); // Save token + user in context
+
+      navigate("/projects"); // 👈 redirect after successful login
     } catch (err) {
       setError(err.message);
     } finally {
@@ -54,7 +58,6 @@ const LoginPage = () => {
         className="bg-white p-6 rounded shadow-md w-full max-w-sm"
       >
         <h2 className="text-2xl font-semibold mb-4 text-center">Login</h2>
-
         {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
 
         <input
@@ -82,7 +85,7 @@ const LoginPage = () => {
           disabled={loading}
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
