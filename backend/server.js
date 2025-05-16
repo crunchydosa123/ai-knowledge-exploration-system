@@ -9,6 +9,7 @@ import embeddingRoutes from "./routes/embeddingRoutes.js";
 import pineconeRoutes from "./routes/pineconeRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import chatRoutes from './routes/chatRoutes.js'
+import pdfRoutes from './routes/pdfRoutes.js'
 
 // For debugging - remove in production
 console.log('Environment check on server start:');
@@ -26,6 +27,7 @@ app.use("/embeddings", embeddingRoutes);
 app.use("/pinecone", pineconeRoutes);
 app.use("/projects", projectRoutes);
 app.use('/chat', chatRoutes)
+app.use('/pdf', pdfRoutes)
 //app.use('/embedding', embeddingRoutes);
 //app.use('/storage', storageRoutes);
 
