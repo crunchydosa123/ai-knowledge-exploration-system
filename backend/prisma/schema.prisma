@@ -23,7 +23,7 @@ model User {
 
 model Project {
   id         String     @id @default(uuid())
-  name       String?    // Made name optional
+  name       String     // Made name required
   createdAt  DateTime   @default(now())
 
   createdBy  User       @relation("UserProjects", fields: [createdById], references: [id])
