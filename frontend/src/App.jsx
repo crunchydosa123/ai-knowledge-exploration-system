@@ -4,6 +4,7 @@ import SignupPage from "./pages/SignupPage"
 import ProjectsPage from "./pages/ProjectsPage"
 import SingleProjectPage from "./pages/SingleProjectPage"
 import { UserProvider } from "./contexts/UserContext"
+import HomePage from "./pages/HomePage"
 
 function App() {
 
@@ -11,7 +12,8 @@ function App() {
     <UserProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<h1>Home</h1>} />
+          <Route path="/" element={<HomePage />} />
+          
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
