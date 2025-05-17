@@ -25,6 +25,7 @@ export const uploadFile = async (req, res) => {
     });
 
     // Upload to Pinata
+    const upload = await pinata.upload.public.file(file);
     console.log('File uploaded to Pinata:', upload);
     res.status(200).json({
       success: true,
