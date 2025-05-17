@@ -1,32 +1,169 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
+
+const AddResourceModal = ({ isOpen, onClose, onSubmit, loading }) => {
+  const [formData, setFormData] = useState({
+    url: '',
+    text: ''
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-2xl font-semibold mb-4">Add Resource</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+              URL (Optional)
+            </label>
+            <input
+              type="url"
+              id="url"
+              name="url"
+              value={formData.url}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter resource URL"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
+              Text Content (Optional)
+            </label>
+            <textarea
+              id="text"
+              name="text"
+              value={formData.text}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter resource text content"
+              rows="4"
+            />
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || (!formData.url && !formData.text)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Adding...' : 'Add Resource'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const SingleProjectPage = () => {
+  const { id: projectId } = useParams();
+  const { user } = useUser();
   const [view, setView] = useState('resources');
   const [showUpload, setShowUpload] = useState(false);
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isAddingResource, setIsAddingResource] = useState(false);
 
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/projects/${projectId}/resources`, {
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
 
-  const websiteName = 'MyWorkspace';
-  const projectName = 'Project Phoenix';
+        if (!response.ok) {
+          throw new Error('Failed to fetch resources');
+        }
 
-  const uploadedResources = [
-    'Invoice_Jan2024.pdf',
-    'Contract_HR_Onboarding.docx',
-  ];
+        const data = await response.json();
+        setResources(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const generatedDocuments = [
-    'Invoice_Summary_Jan.pdf',
-    'HR_JoinForm_Summary.pdf',
-  ];
+    if (user?.token) {
+      fetchResources();
+    }
+  }, [projectId, user]);
 
-  const latestGeneratedDoc = 'Summary_Invoice_April.pdf';
+  const handleAddResource = async (formData) => {
+    setIsAddingResource(true);
+    try {
+      const response = await fetch(`http://localhost:3000/projects/${projectId}/resources`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add resource');
+      }
+
+      const newResource = await response.json();
+      setResources(prev => [...prev, newResource]);
+      setShowUpload(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsAddingResource(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading resources...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* NAVBAR */}
       <nav className="bg-white shadow p-4 flex justify-between items-start lg:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">{websiteName}</h1>
-          <p className="text-sm text-gray-600">{projectName}</p>
+          <h1 className="text-2xl font-bold text-gray-800">MyWorkspace</h1>
+          <p className="text-sm text-gray-600">Project ID: {projectId}</p>
         </div>
         <div className="space-x-4 mt-2 lg:mt-0">
           <button
@@ -52,146 +189,61 @@ const SingleProjectPage = () => {
       <div className="p-6 max-w-7xl mx-auto">
         {/* RESOURCES AND DOCUMENTS VIEW */}
         {view === 'resources' && (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    {/* Uploaded Resources + Upload */}
-    <div className="bg-white p-4 shadow rounded space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Uploaded Resources</h2>
-        <button
-          onClick={() => setShowUpload(!showUpload)}
-          className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-        >
-          + Upload Resource
-        </button>
-      </div>
-      <ul className="space-y-3">
-        {uploadedResources.map((res) => (
-          <li key={res} className="p-3 bg-gray-100 rounded text-sm">
-            {res}
-          </li>
-        ))}
-      </ul>
-
-      {/* Conditionally render Upload Form */}
-      {showUpload && (
-        <div className="mt-4 border-t pt-4">
-          <h3 className="text-lg font-semibold mb-2">Upload Resource</h3>
-          <form className="flex flex-col gap-3">
-            <input
-              type="file"
-              className="p-2 border rounded"
-              accept=".txt,.pdf,.docx"
-            />
-            <textarea
-              placeholder="Optional notes or extracted text"
-              className="p-2 border rounded"
-            />
-            <button
-              type="submit"
-              className="self-start bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Upload
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
-
-    {/* Generated Documents */}
-    <div className="space-y-6">
-      {/* Latest Generated Document */}
-      <div className="bg-white p-4 shadow rounded">
-        <h2 className="text-xl font-semibold mb-4">Latest Generated Document</h2>
-        <div className="p-3 bg-gray-100 rounded">
-          <p className="text-sm">Summary_Invoice_April.pdf</p>
-          <button className="text-blue-600 hover:underline mt-2">Download</button>
-        </div>
-      </div>
-
-      {/* Document History */}
-      <div className="bg-white p-4 shadow rounded">
-        <h2 className="text-xl font-semibold mb-4">Document History</h2>
-        <ul className="space-y-3">
-          <li className="flex justify-between bg-gray-100 p-3 rounded">
-            <span>Invoice_Summary_Jan.pdf</span>
-            <button className="text-blue-600 hover:underline">Download</button>
-          </li>
-          <li className="flex justify-between bg-gray-100 p-3 rounded">
-            <span>HR_JoinForm_Summary.pdf</span>
-            <button className="text-blue-600 hover:underline">Download</button>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-)}
-
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white p-4 shadow rounded space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Resources</h2>
+                <button
+                  onClick={() => setShowUpload(true)}
+                  className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                >
+                  + Add Resource
+                </button>
+              </div>
+              {resources.length === 0 ? (
+                <p className="text-gray-600 text-center py-4">No resources yet. Add your first resource!</p>
+              ) : (
+                <ul className="space-y-3">
+                  {resources.map((resource) => (
+                    <li key={resource.id} className="p-3 bg-gray-100 rounded">
+                      {resource.url && (
+                        <a 
+                          href={resource.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline block mb-1"
+                        >
+                          {resource.url}
+                        </a>
+                      )}
+                      {resource.text && (
+                        <p className="text-sm text-gray-700">{resource.text}</p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Added: {new Date(resource.createdAt).toLocaleDateString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* CHAT VIEW */}
         {view === 'chat' && (
-  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    {/* Sidebar: List of Resources + Upload Form */}
-    <div className="bg-white p-4 rounded shadow col-span-1 space-y-6">
-      {/* Resources List */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Resources</h2>
-        <ul className="space-y-3">
-          {uploadedResources.map((res) => (
-            <li
-              key={res}
-              className="p-2 bg-gray-100 rounded text-sm cursor-pointer hover:bg-gray-200"
-              onClick={() => alert(`Selected ${res}`)}
-            >
-              {res}
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div className="bg-white p-6 rounded shadow">
+            <h2 className="text-xl font-semibold mb-4">Chat Interface</h2>
+            {/* Chat interface will be implemented here */}
+          </div>
+        )}
 
-      {/* Upload Resource */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Upload Resource</h2>
-        <form className="flex flex-col gap-3">
-          <input
-            type="file"
-            className="p-2 border rounded"
-            accept=".txt,.pdf,.docx"
-          />
-          <textarea
-            placeholder="Optional notes or extracted text"
-            className="p-2 border rounded"
-          />
-          <button
-            type="submit"
-            className="self-start bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Upload
-          </button>
-        </form>
-      </div>
-    </div>
-
-    {/* Main Chat Area */}
-    <div className="col-span-1 lg:col-span-3 bg-white p-6 rounded shadow space-y-8">
-      {/* Ask a Question */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Ask a Question</h2>
-        <input
-          type="text"
-          placeholder="Ask about a document..."
-          className="w-full p-2 border rounded mb-2"
+        <AddResourceModal
+          isOpen={showUpload}
+          onClose={() => setShowUpload(false)}
+          onSubmit={handleAddResource}
+          loading={isAddingResource}
         />
-        <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4">
-          Submit
-        </button>
-        <div className="p-3 bg-gray-100 rounded text-sm">
-          <strong>Answer:</strong> Invoice_Jan2024 has been approved.
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
       </div>
     </div>
   );
